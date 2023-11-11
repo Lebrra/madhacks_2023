@@ -2,14 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using BeauRoutine;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
+using System;
 
 public class FlipperInput : MonoBehaviour
 {
+    public static Action<bool, Rigidbody2D, Vector2> FlipperHitBall;
+
     List<string> activeInputs;
 
     [SerializeField]
     float flipperSpeed = 0.2F;
+    [SerializeField]
+    float flipperForce = 1F;
 
     [Header("LEFT"), SerializeField]
     Transform leftAnchor;
@@ -32,13 +36,22 @@ public class FlipperInput : MonoBehaviour
         activeInputs = new List<string>();
     }
 
+    private void OnEnable()
+    {
+        FlipperHitBall += ApplyFlipperForce;
+    }
+    private void OnDisable()
+    {
+        FlipperHitBall -= ApplyFlipperForce;
+    }
+
     private void Update()
     {
         // todo: support many inputs
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) leftRoutine.Replace(LeftFlipperUp());
-        if (Input.GetKeyUp(KeyCode.LeftArrow)) leftRoutine.Replace(LeftFlipperDown());
-        if (Input.GetKeyDown(KeyCode.RightArrow)) rightRoutine.Replace(RightFlipperUp());
-        if (Input.GetKeyUp(KeyCode.RightArrow)) rightRoutine.Replace(RightFlipperDown());
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) OnInputDown("left");
+        if (Input.GetKeyUp(KeyCode.LeftArrow)) OnInputUp("left");
+        if (Input.GetKeyDown(KeyCode.RightArrow)) OnInputDown("right");
+        if (Input.GetKeyUp(KeyCode.RightArrow)) OnInputUp("right");
     }
 
     void OnInputDown(string input)
@@ -51,6 +64,15 @@ public class FlipperInput : MonoBehaviour
         {
             activeInputs.Add(input);
             // do oninputenter
+            switch (input)
+            {
+                case "left":
+                    leftRoutine.Replace(LeftFlipperUp());
+                    break;
+                case "right":
+                    rightRoutine.Replace(RightFlipperUp());
+                    break;
+            }
         }
     }
 
@@ -65,6 +87,15 @@ public class FlipperInput : MonoBehaviour
         {
             activeInputs.Remove(input);
             // do oninputup
+            switch (input)
+            {
+                case "left":
+                    leftRoutine.Replace(LeftFlipperDown());
+                    break;
+                case "right":
+                    rightRoutine.Replace(RightFlipperDown());
+                    break;
+            }
         }
         else
         {
@@ -99,5 +130,23 @@ public class FlipperInput : MonoBehaviour
         float currAngle = (rightAnchor.rotation.eulerAngles.z - 360F) % 360F;
         float timeLeft = Mathf.Abs(currAngle) / Mathf.Abs(minRightAngle - maxRightAngle) * flipperSpeed;
         yield return rightAnchor.RotateTo(minRightAngle, Mathf.Clamp(timeLeft, 0F, flipperSpeed), Axis.Z);
+    }
+
+    public void ApplyFlipperForce(bool isLeft, Rigidbody2D ball, Vector2 contactNorm)
+    {
+        if (ApproveBallForce(isLeft))
+        {
+            Debug.Log("Applying force on ball");
+            Vector2 forceNorm = contactNorm * -1F;
+            ball.AddForce(forceNorm * flipperForce, ForceMode2D.Impulse);
+            Debug.DrawRay(ball.transform.position, contactNorm * 1F, Color.red, 8F);
+            Debug.DrawRay(ball.transform.position, forceNorm * 1F, Color.blue, 8F);
+        }
+    }
+
+    bool ApproveBallForce(bool isLeft)
+    {
+        return (isLeft && leftRoutine.Exists() && activeInputs.Contains("left")) ||
+            (!isLeft && rightRoutine.Exists() && activeInputs.Contains("right"));
     }
 }
