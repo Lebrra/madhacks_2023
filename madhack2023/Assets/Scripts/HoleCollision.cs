@@ -4,16 +4,22 @@ using UnityEngine;
 
 public class HoleCollision : MonoBehaviour
 {
-    [SerializeField]
     float maxCompareDist = 5F;
     [SerializeField]
     float maxBallVelocity = 5F;
     [SerializeField]
     GameObject trap;
 
+    bool caught = false;
+
+    private void Start()
+    {
+        maxCompareDist = GetComponent<CircleCollider2D>().radius / 4F;
+    }
+
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (collision.CompareTag("Ball"))
+        if (!caught && collision.CompareTag("Ball"))
         {
             var dist = Vector2.Distance(transform.position, collision.transform.position);
             Debug.Log(collision.attachedRigidbody.velocity.magnitude);
@@ -21,6 +27,7 @@ public class HoleCollision : MonoBehaviour
             {
                 // put up colliders & fade out ball & give points
                 trap.SetActive(true);
+                caught = true;
             }
         }
     }
@@ -28,5 +35,6 @@ public class HoleCollision : MonoBehaviour
     public void ResetTrap()
     {
         trap.SetActive(false);
+        caught = false;
     }
 }
