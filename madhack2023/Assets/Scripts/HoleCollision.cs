@@ -28,7 +28,8 @@ public class HoleCollision : MonoBehaviour
         transform.localScale = Vector2.one * scaler;
 
         // update max radius for catching
-        maxCompareDist = GetComponent<CircleCollider2D>().radius / 4F;
+        maxCompareDist = GetComponent<CircleCollider2D>().radius * scaler;
+        Debug.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y + maxCompareDist), Color.green, 20F);
 
         ResetTrap();
     }
@@ -38,13 +39,13 @@ public class HoleCollision : MonoBehaviour
         if (!caught && collision.CompareTag("Ball"))
         {
             var dist = Vector2.Distance(transform.position, collision.transform.position);
-            Debug.Log(collision.attachedRigidbody.velocity.magnitude);
+            //Debug.Log(collision.attachedRigidbody.velocity.magnitude);
             if (dist < maxCompareDist && collision.attachedRigidbody.velocity.magnitude < maxBallVelocity)
             {
                 // put up colliders & fade out ball & give points
                 trap.SetActive(true);
                 caught = true;
-                GameLoader.ScorePoints?.Invoke(pointValue);
+                GameManager.ScorePoints?.Invoke(pointValue);
             }
         }
     }

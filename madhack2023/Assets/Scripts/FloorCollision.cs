@@ -9,7 +9,7 @@ public class FloorCollision : MonoBehaviour
         // if ball, set ball static, pan camera down, disable last track, enable new track, set ball dynamic
         if (collision.CompareTag("Ball"))
         {
-            GameLoader.ProgressTrack?.Invoke(collision.attachedRigidbody);
+            GameManager.ProgressTrack?.Invoke(collision.attachedRigidbody);
         }
     }
 }

@@ -70,6 +70,7 @@ public class TrackLoader : MonoBehaviour
             // give points
             holes[i].Initialize(points[i]);
         }
+        DisableTrack();
     }
 
     public void EnableTrack()
