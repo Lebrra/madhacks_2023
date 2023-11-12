@@ -8,6 +8,10 @@ public class FlipperInput : MonoBehaviour
 {
     public static Action<bool, Rigidbody2D, Vector2> FlipperHitBall;
 
+    // Android calls
+    public static Action<string> OnUIDown;
+    public static Action<string> OnUIUp;
+
     List<string> activeInputs;
 
     [SerializeField]
@@ -35,12 +39,21 @@ public class FlipperInput : MonoBehaviour
     {
         activeInputs = new List<string>();
         FlipperHitBall += ApplyFlipperForce;
+#if UNITY_ANDROID
+        OnUIDown += OnInputDown;
+        OnUIUp += OnInputUp;
+#endif
     }
     private void OnDisable()
     {
         FlipperHitBall -= ApplyFlipperForce;
         if (leftRoutine.Exists()) leftRoutine.Stop();
         if (rightRoutine.Exists()) rightRoutine.Stop();
+
+#if UNITY_ANDROID
+        OnUIDown -= OnInputDown;
+        OnUIUp -= OnInputUp;
+#endif
     }
 
     private void Update()

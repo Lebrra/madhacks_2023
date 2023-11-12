@@ -47,6 +47,8 @@ public class HighScoreLoader : MonoBehaviour
     // Called on StartButton OnClick
     public void HideScores()
     {
+#if !UNITY_ANDROID
         scoresObj.gameObject.SetActive(false);
+#endif
     }
 }

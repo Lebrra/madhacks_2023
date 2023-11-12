@@ -105,7 +105,11 @@ public class GameManager : MonoBehaviour
 
     IEnumerator CameraPan(int trackIndex, float speed, Action postAction)
     {
+#if UNITY_ANDROID
+        Vector3 cameraPos = new Vector3(tracks[trackIndex].transform.position.x, tracks[trackIndex].transform.position.y - 2.5F, -10F);
+#else
         Vector3 cameraPos = new Vector3(tracks[trackIndex].transform.position.x, tracks[trackIndex].transform.position.y, -10F);
+#endif
         yield return cameraTransform.MoveTo(cameraPos, speed).Ease(panCurve);
         postAction?.Invoke();
     }
