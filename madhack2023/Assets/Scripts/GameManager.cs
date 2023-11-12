@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     public static Action<Rigidbody2D> ProgressTrack;
     public static Action<int> ScorePoints;  // in single digits, multiply by 100 for visuals
     public static Action<Rigidbody2D, bool> ThrowBall;
+    public static Action<int[]> UpdateScores;
 
     [SerializeField]
     TrackLoader[] tracks;   // always 5 - don't create them we can reuse them
@@ -64,6 +65,7 @@ public class GameManager : MonoBehaviour
 
         score = 0;
         CollectPoints(0);
+        UpdateScores?.Invoke(highScores);
 
         // determine point variation (always 5 tracks)
         // between 1 and 2:
@@ -90,7 +92,7 @@ public class GameManager : MonoBehaviour
     {
         currentTrack = 0;
         tracks[currentTrack].EnableTrack();
-        
+
         ballTransform.gameObject.SetActive(true);
         ThrowBallIn(ballTransform.GetComponent<Rigidbody2D>(), true);
         scoreText.GetComponent<Animator>().SetTrigger("In");
@@ -219,6 +221,6 @@ public class GameManager : MonoBehaviour
 
     bool CheckNewHighScore(int score)
     {
-        return score > highScores[4];
+        return score > highScores[4] && score > 0;
     }
 }
