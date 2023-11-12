@@ -12,10 +12,16 @@ public class GameManager : MonoBehaviour
     public static Action<Rigidbody2D> ProgressTrack;
     public static Action EndGame;
     public static Action<int> ScorePoints;  // in single digits, multiply by 100 for visuals
+    public static Action<Rigidbody2D, bool> ThrowBall;
 
     [SerializeField]
     TrackLoader[] tracks;   // always 5 - don't create them we can reuse them
     int currentTrack = -1;
+
+    [SerializeField]
+    TMPro.TextMeshProUGUI scoreText;
+    int score;
+    Routine scoreAnimated;
 
     [Header("Camera"), SerializeField]
     Transform cameraTransform;
@@ -27,21 +33,34 @@ public class GameManager : MonoBehaviour
 
     [Header("Ball"), SerializeField]
     Transform ballTransform;
+
+    [Header("End"), SerializeField]
+    Animator endAnim;
     [SerializeField]
-    Transform ballStart;
+    TMPro.TextMeshProUGUI endScore;
+    [SerializeField]
+    GameObject highScore;
 
     private void OnEnable()
     {
         ProgressTrack += NextTrack;
+        ThrowBall += ThrowBallIn;
+        ScorePoints += CollectPoints;
         CreateGame();
     }
     private void OnDisable()
     {
         ProgressTrack -= NextTrack;
+        ThrowBall -= ThrowBallIn;
+        ScorePoints -= CollectPoints;
     }
 
     public void CreateGame()
     {
+        ballTransform.gameObject.SetActive(false);
+        score = 0;
+        CollectPoints(0);
+
         // determine point variation (always 5 tracks)
         // between 1 and 2:
         int rand = UnityEngine.Random.Range(0, 6);
@@ -68,9 +87,9 @@ public class GameManager : MonoBehaviour
         currentTrack = 0;
         tracks[currentTrack].EnableTrack();
         
-        ballTransform.position = ballStart.position;
         ballTransform.gameObject.SetActive(true);
-        ThrowBallIn(ballTransform.GetComponent<Rigidbody2D>());
+        ThrowBallIn(ballTransform.GetComponent<Rigidbody2D>(), true);
+        scoreText.GetComponent<Animator>().SetTrigger("In");
     }
 
     public void PanCamera(int trackIndex, float speed, Action postAction = null)
@@ -94,6 +113,13 @@ public class GameManager : MonoBehaviour
         if (currentTrack >= 5)
         {
             Debug.Log("GAME END");
+
+            endScore.text = (score * 100).ToString();
+            // TODO: check highscore
+            highScore.SetActive(true);
+
+            scoreText.GetComponent<Animator>().SetTrigger("Out");
+            endAnim.SetTrigger("End");
         }
         else
         {
@@ -104,9 +130,30 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void ThrowBallIn(Rigidbody2D ball)
+    void ThrowBallIn(Rigidbody2D ball, bool placeBall = false)
     {
+        if (placeBall) ball.transform.position = tracks[currentTrack].BallSpawnpoint.position;
         ball.bodyType = RigidbodyType2D.Dynamic;
         ball.AddForce(Vector2.right * UnityEngine.Random.Range(-2F, 2F), ForceMode2D.Impulse);
+    }
+
+    void CollectPoints(int value)
+    {
+        Debug.LogWarning($"Collected {value} points!");
+        //scoreText.text = (score * 100).ToString();
+        scoreAnimated.Replace(AnimateScore(score, score + value));
+        score += value;
+    }
+
+    IEnumerator AnimateScore(int from, int to)
+    {
+        var time = 0.5F;
+        while (time > 0F)
+        {
+            scoreText.text = Mathf.RoundToInt(Mathf.Lerp(to, from, 0.5F - time) * 100F).ToString();
+            time -= Time.deltaTime;
+            yield return null;
+        }
+        scoreText.text = (score * 100).ToString();
     }
 }

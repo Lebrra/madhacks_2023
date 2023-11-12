@@ -31,18 +31,16 @@ public class FlipperInput : MonoBehaviour
     float maxRightAngle = -70F;
     Routine rightRoutine;
 
-    private void Start()
-    {
-        activeInputs = new List<string>();
-    }
-
     private void OnEnable()
     {
+        activeInputs = new List<string>();
         FlipperHitBall += ApplyFlipperForce;
     }
     private void OnDisable()
     {
         FlipperHitBall -= ApplyFlipperForce;
+        if (leftRoutine.Exists()) leftRoutine.Stop();
+        if (rightRoutine.Exists()) rightRoutine.Stop();
     }
 
     private void Update()

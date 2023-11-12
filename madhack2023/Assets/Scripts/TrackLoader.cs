@@ -16,6 +16,9 @@ public class TrackLoader : MonoBehaviour
     HoleCollision holePref;
     [SerializeField]
     List<Transform> holeSpawnpoints;
+    [SerializeField]
+    Transform ballSpawnpoint;
+    public Transform BallSpawnpoint { get => ballSpawnpoint; }
 
     List<HoleCollision> holes = null;
 
@@ -47,7 +50,10 @@ public class TrackLoader : MonoBehaviour
 
         // generate holes - favor pools
         if (holes == null) holes = new List<HoleCollision>();
-        var holeSpawns = holeSpawnpoints;
+
+        // generate temp list to pull spawns from randomly
+        var holeSpawns = new List<Transform>();
+        foreach (var hole in holeSpawnpoints) holeSpawns.Add(hole);
 
         for (int i = 0; i < holeCount; i++)
         {
@@ -75,13 +81,16 @@ public class TrackLoader : MonoBehaviour
 
     public void EnableTrack()
     {
+        GameManager.ThrowBall += DelayHoles;
         myFlippers.enabled = true;
         ceilingCol.SetActive(true);
         floorCol.SetActive(true);
+        DelayHoles(null, false);
     }
 
     public void DisableTrack()
     {
+        GameManager.ThrowBall -= DelayHoles;
         myFlippers.enabled = false;
         ceilingCol.SetActive(false);
         floorCol.SetActive(false);
@@ -94,6 +103,17 @@ public class TrackLoader : MonoBehaviour
             foreach (var hole in holes)
             {
                 hole.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    void DelayHoles(Rigidbody2D rb, bool b)
+    {
+        foreach (var hole in holes)
+        {
+            if (hole.gameObject.activeInHierarchy)
+            {
+                hole.ForceDelay();
             }
         }
     }

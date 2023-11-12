@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using BeauRoutine;
 
 public class HoleCollision : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class HoleCollision : MonoBehaviour
     int pointValue = 0;
 
     bool caught = false;
+    Routine delay;
 
     public void Initialize(int points)  // range of 3-5
     {
@@ -28,7 +30,7 @@ public class HoleCollision : MonoBehaviour
         transform.localScale = Vector2.one * scaler;
 
         // update max radius for catching
-        maxCompareDist = GetComponent<CircleCollider2D>().radius * scaler;
+        maxCompareDist = GetComponent<CircleCollider2D>().radius * scaler * 0.9F;
         Debug.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y + maxCompareDist), Color.green, 20F);
 
         ResetTrap();
@@ -36,7 +38,7 @@ public class HoleCollision : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (!caught && collision.CompareTag("Ball"))
+        if (!delay.Exists() && !caught && collision.CompareTag("Ball"))
         {
             var dist = Vector2.Distance(transform.position, collision.transform.position);
             //Debug.Log(collision.attachedRigidbody.velocity.magnitude);
@@ -45,8 +47,29 @@ public class HoleCollision : MonoBehaviour
                 // put up colliders & fade out ball & give points
                 trap.SetActive(true);
                 caught = true;
-                GameManager.ScorePoints?.Invoke(pointValue);
+                Routine.Start(ConfirmCatch(collision.attachedRigidbody));
             }
+        }
+    }
+
+    IEnumerator ConfirmCatch(Rigidbody2D ballRB)
+    {
+        yield return new WaitForEndOfFrame();
+
+        var dist = Vector2.Distance(transform.position, ballRB.transform.position); 
+        if (dist < maxCompareDist && !delay.Exists())
+        {
+            // catch confirmed
+            GameManager.ScorePoints?.Invoke(pointValue);
+            ballRB.GetComponent<Animator>()?.SetTrigger("Fade");
+            yield return 0.68F;
+            GameManager.ThrowBall?.Invoke(ballRB, true);
+            ResetTrap();
+        }
+        else
+        {
+            // false alarm, let go
+            ResetTrap();
         }
     }
 
@@ -54,5 +77,15 @@ public class HoleCollision : MonoBehaviour
     {
         trap.SetActive(false);
         caught = false;
+    }
+
+    public void ForceDelay()
+    {
+        delay.Replace(Delay());
+    }
+
+    IEnumerator Delay()
+    {
+        yield return 1F;
     }
 }
