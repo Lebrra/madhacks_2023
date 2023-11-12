@@ -58,6 +58,8 @@ public class GameManager : MonoBehaviour
     public void CreateGame()
     {
         ballTransform.gameObject.SetActive(false);
+        endAnim.SetTrigger("Reset");
+
         score = 0;
         CollectPoints(0);
 
