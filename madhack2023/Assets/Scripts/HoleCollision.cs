@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class HoleCollision : MonoBehaviour
 {
@@ -9,12 +10,27 @@ public class HoleCollision : MonoBehaviour
     float maxBallVelocity = 5F;
     [SerializeField]
     GameObject trap;
+    [SerializeField]
+    TextMeshPro tmpro;
+    
+    int pointValue = 0;
 
     bool caught = false;
 
-    private void Start()
+    public void Initialize(int points)  // range of 3-5
     {
+        pointValue = points;
+        tmpro.text = (points * 100).ToString(); // numbers are only bigger to the player | bigger numbers = more fun
+
+        // size is dependent on point value -> most points (1000) = size is 3 | least points (100) = size is 5
+        float inversePointPercent = 1F - (((float)points - 1F) / 9F);
+        float scaler = inversePointPercent * 2F + 3F;
+        transform.localScale = Vector2.one * scaler;
+
+        // update max radius for catching
         maxCompareDist = GetComponent<CircleCollider2D>().radius / 4F;
+
+        ResetTrap();
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -28,6 +44,7 @@ public class HoleCollision : MonoBehaviour
                 // put up colliders & fade out ball & give points
                 trap.SetActive(true);
                 caught = true;
+                GameLoader.ScorePoints?.Invoke(pointValue);
             }
         }
     }
