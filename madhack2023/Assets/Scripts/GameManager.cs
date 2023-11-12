@@ -10,7 +10,6 @@ public class GameManager : MonoBehaviour
 {
     // static messages
     public static Action<Rigidbody2D> ProgressTrack;
-    public static Action EndGame;
     public static Action<int> ScorePoints;  // in single digits, multiply by 100 for visuals
     public static Action<Rigidbody2D, bool> ThrowBall;
 
@@ -40,12 +39,15 @@ public class GameManager : MonoBehaviour
     TMPro.TextMeshProUGUI endScore;
     [SerializeField]
     GameObject highScore;
+    int[] highScores;
+    const string SCOREKEY = "highscore";
 
     private void OnEnable()
     {
         ProgressTrack += NextTrack;
         ThrowBall += ThrowBallIn;
         ScorePoints += CollectPoints;
+        LoadScores();
         CreateGame();
     }
     private void OnDisable()
@@ -114,14 +116,7 @@ public class GameManager : MonoBehaviour
         currentTrack++;
         if (currentTrack >= 5)
         {
-            Debug.Log("GAME END");
-
-            endScore.text = (score * 100).ToString();
-            // TODO: check highscore
-            highScore.SetActive(true);
-
-            scoreText.GetComponent<Animator>().SetTrigger("Out");
-            endAnim.SetTrigger("End");
+            EndGame();
         }
         else
         {
@@ -130,6 +125,22 @@ public class GameManager : MonoBehaviour
             tracks[currentTrack - 1].DisableTrack();
             tracks[currentTrack].EnableTrack();
         }
+    }
+
+    void EndGame()
+    {
+        Debug.Log("GAME END");
+
+        endScore.text = (score * 100).ToString();
+        if (CheckNewHighScore(score))
+        {
+            highScore.SetActive(true);
+            SaveScores(score);
+        }
+        else highScore.SetActive(false);
+
+        scoreText.GetComponent<Animator>().SetTrigger("Out");
+        endAnim.SetTrigger("End");
     }
 
     void ThrowBallIn(Rigidbody2D ball, bool placeBall = false)
@@ -157,5 +168,57 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
         scoreText.text = (score * 100).ToString();
+    }
+
+    void LoadScores()
+    {
+        highScores = new int[5] { -1, -1, -1, -1, -1};
+        for (int i = 1; i <= 5; i++)
+        {
+            string key = SCOREKEY + i.ToString();
+            if (PlayerPrefs.HasKey(key))
+            {
+                highScores[i - 1] = PlayerPrefs.GetInt(key);
+            }
+            else break; // scores are ordered, filling from 1st to 5th
+        }
+    }
+
+    void SaveScores(int newScore)
+    {
+        // already confirmed this better 
+        int placement = -1;
+        for (int i = 4; i >= 0; i--)
+        {
+            if (newScore > highScores[i]) placement = i;
+            else break;
+        }
+        if (placement < 0)
+        {
+            Debug.LogError($"Score is not new: {newScore} | Worst high score: {highScores[4]}");
+            return;
+        }
+        for (int i = 4; i > placement; i--)
+        {
+            highScores[i] = highScores[i - 1];
+        }
+        highScores[placement] = newScore;
+
+        //save
+        for (int i = 1; i <= 5; i++)
+        {
+            if (highScores[i - 1] > 0)
+            {
+                string key = SCOREKEY + i.ToString();
+                PlayerPrefs.SetInt(key, highScores[i - 1]);
+                Debug.Log($"[Saved] {key} => {highScores[i - 1]}");
+            }
+            else break;
+        }
+    }
+
+    bool CheckNewHighScore(int score)
+    {
+        return score > highScores[4];
     }
 }
