@@ -4,7 +4,6 @@ using UnityEngine;
 using System;
 using BeauRoutine;
 using UnityEngine.Serialization;
-using static TreeEditor.TreeEditorHelper;
 
 public class GameManager : MonoBehaviour
 {
